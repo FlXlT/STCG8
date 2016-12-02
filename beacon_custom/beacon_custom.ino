@@ -12,6 +12,7 @@
 
 #define NODEID        1    //unique for each node on same network
 #define NETWORKID     10  //the same on all nodes that talk to each other
+#define GATEWAYID     1    // Must be 1 or 2??
 #define FREQUENCY     RF69_868MHZ
 #define ENCRYPTKEY    "ae3535-practicaz" //exactly the same 16 characters/bytes on all nodes!
 #define SERIAL_BAUD   115200
@@ -79,6 +80,7 @@ void setup() {
 byte ackCount=0;
 uint32_t packetCount = 0;
 int echoon = 1;
+
 void loop() {
   //process any serial input
   if (Serial.available() > 0)
@@ -159,11 +161,23 @@ void loop() {
       // Printing payload data.
       Payload* pay = (Payload*)radio.DATA;
       Serial.print("<NodeID "); Serial.print(pay->nodeId); Serial.print(" >\n");
-      Serial.print("<Voltage1 "); Serial.print(pay->v1); Serial.print(" >\n");
-      Serial.print("<Voltage2 "); Serial.print(pay->v2); Serial.print(" >\n");
-      Serial.print("<Voltage3 "); Serial.print(pay->v3); Serial.print(" >\n");
+      Serial.print("<Voltage 1 "); Serial.print(pay->v1); Serial.print(" >\n");
+      Serial.print("<Voltage 2 "); Serial.print(pay->v2); Serial.print(" >\n");
+      Serial.print("<Voltage 3 "); Serial.print(pay->v3); Serial.print(" >\n");
       
+      char testEndData[] = "Should be the computed data";
       
+      if(radio.sendWithRetry(GATEWAYID, testEndData, sizeof(testEndData))) {
+        Serial.print("GS sent data back\n");
+      } else {
+        Serial.print("nothing...\n");
+      }
+      
+      // Sending ACK's where needed
+      if (radio.ACKRequested()) {
+        radio.sendACK();
+        Serial.print("ACK sent\n");
+      }
     } else {
       delay(10);
     }

@@ -1,6 +1,3 @@
-// TEST GIT VERSION CONTROl
-// MASTER
-
 // Sample RFM69 sender/node sketch, with ACK and optional encryption
 // Sends periodic messages of increasing length to gateway (id=1)
 // It also looks for an onboard FLASH chip, if present
@@ -11,10 +8,10 @@
 #include <SPI.h>
 #include <SPIFlash.h> //get it here: https://www.github.com/lowpowerlab/spiflash
 #define NODEID        2    //unique for each node on same network               <----------------------------- change this by group, avoid conflicting nodes
-#define NETWORKID     100  //the same on all nodes that talk to each other      <----------------------------- keep it the same for all groups + beacon
+#define NETWORKID     10  //the same on all nodes that talk to each other      <----------------------------- keep it the same for all groups + beacon
 #define GATEWAYID     1    //                                                   <----------------------------- must be 1
 #define FREQUENCY     RF69_868MHZ  //                                           <----------------------------- must be like this because of antenna length
-#define ENCRYPTKEY    "ae3535-practical" //                                     <----------------------------- exactly the same 16 characters/bytes on all nodes!
+#define ENCRYPTKEY    "ae3535-practicaz" //                                     <----------------------------- exactly the same 16 characters/bytes on all nodes!
 #define SERIAL_BAUD   115200
 #define MASTERBEAT    1000  // leave it like this please (preferable increase it)
 
@@ -131,9 +128,14 @@ void loop() {
   }
   //check for any received packets
   if (radio.receiveDone()) {
-    Serial.print('[');Serial.print(radio.SENDERID, DEC);Serial.print("] ");
-    for (byte i = 0; i < radio.DATALEN; i++) Serial.print((char)radio.DATA[i]);
-    Serial.print("   [RX_RSSI:");Serial.print(radio.RSSI);Serial.print("]");
+    Serial.print('['); Serial.print(radio.SENDERID, DEC); Serial.print("] ");
+    Serial.print("   [RX_RSSI:"); Serial.print(radio.RSSI); Serial.print("]\n");
+    Serial.print("Received end data: ");
+    
+    for(byte i = 0; i < radio.DATALEN; i++) {
+        Serial.print(radio.DATA[i]);
+    }
+       
     if (radio.ACKRequested()) {
       radio.sendACK();
       Serial.print(" - ACK sent");
