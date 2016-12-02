@@ -1,6 +1,3 @@
-// TEST GIT VERSION CONTROl
-// NEW BRANCH V2
-
 // Sample RFM69 sender/node sketch, with ACK and optional encryption
 // Sends periodic messages of increasing length to gateway (id=1)
 // It also looks for an onboard FLASH chip, if present
