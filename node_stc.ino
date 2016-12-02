@@ -1,3 +1,6 @@
+// TEST GIT VERSION CONTROl
+
+
 // Sample RFM69 sender/node sketch, with ACK and optional encryption
 // Sends periodic messages of increasing length to gateway (id=1)
 // It also looks for an onboard FLASH chip, if present
@@ -7,7 +10,6 @@
 #include <RFM69.h>    //get it here: https://www.github.com/lowpowerlab/rfm69
 #include <SPI.h>
 #include <SPIFlash.h> //get it here: https://www.github.com/lowpowerlab/spiflash
-
 #define NODEID        2    //unique for each node on same network               <----------------------------- change this by group, avoid conflicting nodes
 #define NETWORKID     100  //the same on all nodes that talk to each other      <----------------------------- keep it the same for all groups + beacon
 #define GATEWAYID     1    //                                                   <----------------------------- must be 1
