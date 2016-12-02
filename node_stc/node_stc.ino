@@ -129,6 +129,7 @@ void loop() {
   //check for any received packets
   if (radio.receiveDone()) {
     Serial.print('['); Serial.print(radio.SENDERID, DEC); Serial.print("] ");
+    Serial.print("   [RX_RSSI:"); Serial.print(radio.RSSI); Serial.print("]\n");
     Serial.print("Received end data: ");
     
     for(byte i = 0; i < radio.DATALEN; i++) {
