@@ -29,7 +29,8 @@ RFM69 radio;
 typedef struct {
     int           nodeId; //store this nodeId
     float         v1; // Voltages
-    float         v2;
+    float         v2a;
+    float         v2b;
     float         v3;
 } Payload;
 Payload theData;
@@ -70,12 +71,13 @@ long lastPeriod = -1;
 void loop() {
     //process any serial input
     // -----------------------------------Determine voltages
-    float  LDR1 = 0;
-    float  LDR2 = 0;
-    float  LDR3 = 0;
-    float  Voltage1 = 0;
-    float  Voltage2 = 0;
-    float  Voltage3 = 0;
+    float  LDR1;
+    float  LDR2a;
+    float  LDR2b;
+    float  LDR3;
+    float  Voltage1;
+    float  Voltage2;
+    float  Voltage3;
     
     
     LDR1 = analogRead(A0);
@@ -85,12 +87,12 @@ void loop() {
     Voltage1 = (LDR1 * 3.3) / 1024.0;
     delay(10);
     
-    LDR2 = analogRead(A1);
-    delay(10);
-    LDR2 = analogRead(A1);
-    delay(10);
-    Voltage2 = (LDR2 * 3.3) / 1024.0;
-    delay(10);
+    LDR2a = analogRead(A1);
+    delay(5000);
+    LDR2b = analogRead(A1);
+
+    Voltage2a = (LDR2a * 3.3) / 1024.0;
+    Voltage2b = (LDR2b * 3.3) / 1024.0;
     
     LDR3 = analogRead(A2);
     delay(10);
@@ -102,7 +104,8 @@ void loop() {
     //-----------------------------fill in the struct with new values
     theData.nodeId = NODEID;
     theData.v1 = Voltage1; //
-    theData.v2 = Voltage2;
+    theData.v2a = Voltage2a;
+    theData.v2b = Voltage2b;
     theData.v3 = Voltage3;
     
     if (Serial.available() > 0)
