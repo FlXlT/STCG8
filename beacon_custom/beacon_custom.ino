@@ -237,64 +237,22 @@ void loop() {
             int LR1 = map(diffLR1, -0.36, 0.0, -6, -1);
         }
         
-        if (diffLR1!=diffLR) {
-            switch(LR1) {
-                case 1:
-                    brightnessR = 40.0;
-                    brightnessL = 0.0;
-                    break;
-                case 2:
-                    brightnessR = 80.0;
-                    brightnessL = 0.0;
-                    break;
-                case 3:
-                    brightnessR = 120.0;
-                    brightnessL = 0.0;
-                    break;
-                case 4:
-                    brightnessR = 160.0;
-                    brightnessL = 0.0;
-                    break;
-                case 5:
-                    brightnessR = 200.0;
-                    brightnessL = 0.0;
-                    break;
-                case 6:
-                    brightnessR = 255.0;
-                    brightnessL = 0.0;
-                    break;
-                case -1:
-                    brightnessL = 40.0;
-                    brightnessR = 0.0;
-                    break;
-                case -2:
-                    brightnessL = 80.0;
-                    brightnessR = 0.0;
-                    break;
-                case -3:
-                    brightnessL = 120.0;
-                    brightnessR = 0.0;
-                    break;
-                case -4:
-                    brightnessL = 160.0;
-                    brightnessR = 0.0;
-                    break;
-                case -5:
-                    brightnessL = 200.0;
-                    brightnessR = 0.0;
-                    break;
-                case -6:
-                    brightnessL = 255.0;
-                    brightnessR = 0.0;
-                    break;
+        if(diffLR1 != diffLR) {
+            if (LR1 > 0) {
+              if (LR1 == 6) brightnessL = 255.0;
+              brightnessL = 0.0;
+              brightnessR = LR1 * 40.0;
+            } else if (LR1 < 0) {
+              if (LR1 == -6) brightnessR = 255.0;
+              brightnessL = abs(LR1) * 40.0;
+              brightnessR = 0.0;
+            } else {
+              Serial.print("Error");
             }
-        }
-        else if (v2a>0.6 || v2b>0.6)
-        {brightnessR = 255.0;
+        } else if (v2a>0.6 || v2b>0.6) {
+        brightnessR = 255.0;
             brightnessL = 255.0;
-        }
-        
-        else {
+        } else {
             brightnessR = 0.0;
             brightnessL = 0.0;
         }
