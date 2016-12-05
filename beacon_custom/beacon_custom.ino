@@ -192,6 +192,7 @@ void loop() {
       Serial.print("<NodeID "); Serial.print(pay->nodeId); Serial.print(" >\n");
       Serial.print("<Voltage 1 "); Serial.print(pay->v1); Serial.print(" >\n");
       Serial.print("<Voltage 2 "); Serial.print(pay->v2a); Serial.print(" >\n");
+      Serial.print("<Voltage 2b "); Serial.print(pay->v2b); Serial.print(" >\n");
       Serial.print("<Voltage 3 "); Serial.print(pay->v3); Serial.print(" >\n");
 
       char testEndData[] = "Should be the computed data";
