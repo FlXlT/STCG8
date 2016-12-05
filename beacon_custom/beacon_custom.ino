@@ -33,6 +33,25 @@
 int led = 9; // Pin 9 has an LED connected in the moteino board
 int cc = 0;
 
+typedef struct {
+  int           nodeId; //store this nodeId
+  float         v1; // Voltages
+  float         v2a;
+  float         v2b;
+  float         v3;
+} Payload;
+
+Payload dataPackage;
+
+typedef struct {
+  byte brightLeft; //Brightness levels for the LEDS
+  byte brightRight;
+  byte brightUp;
+  byte brightDown;
+} Lightload;
+
+Lightload lightPackage;
+
 byte brightnessL; //Brightness levels for the LEDS
 byte brightnessR;
 byte brightnessU;
@@ -46,17 +65,6 @@ float diffUD;
 float diffUD1;
 int LR1;
 int UD1;
-
-
-typedef struct {
-  int           nodeId; //store this nodeId
-  float         v1; // Voltages
-  float         v2a;
-  float         v2b;
-  float         v3;
-} Payload;
-
-Payload dataPackage;
 
 RFM69 radio;
 SPIFlash flash(FLASH_SS, 0xEF30); //EF30 for 4mbit  Windbond chip (W25X40CL)
@@ -195,19 +203,6 @@ void loop() {
       Serial.print("<Voltage 2b "); Serial.print(pay->v2b); Serial.print(" >\n");
       Serial.print("<Voltage 3 "); Serial.print(pay->v3); Serial.print(" >\n");
 
-      char testEndData[] = "Should be the computed data";
-
-      if (radio.sendWithRetry(GATEWAYID, testEndData, sizeof(testEndData))) {
-        Serial.print("GS sent data back\n");
-      } else {
-        Serial.print("nothing...\n");
-      }
-
-      // Sending ACK's where needed
-      if (radio.ACKRequested()) {
-        radio.sendACK();
-        Serial.print("ACK sent\n");
-      }
     } else {
       delay(10);
     }
@@ -309,6 +304,23 @@ void loop() {
         }
         brightnessU = 0.0;
       }
+    }
+
+    lightPackage.brightLeft = brightnessL;
+    lightPackage.brightRight = brightnessR;
+    lightPackage.brightUp = brightnessU;
+    lightPackage.brightDown = brightnessD;
+
+    if (radio.sendWithRetry(GATEWAYID, (const void*)(&lightPackage), sizeof(lightPackage))) {
+      Serial.print("GS sent data back\n");
+    } else {
+      Serial.print("nothing...\n");
+    }
+
+    // Sending ACK's where needed
+    if (radio.ACKRequested()) {
+      radio.sendACK();
+      Serial.print("ACK sent\n");
     }
   }
 }
