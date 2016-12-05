@@ -316,12 +316,6 @@ void loop() {
     } else {
       Serial.print("nothing...\n");
     }
-
-    // Sending ACK's where needed
-    if (radio.ACKRequested()) {
-      radio.sendACK();
-      Serial.print("ACK sent\n");
-    }
   }
 }
 //if (echoon) Serial.println();
