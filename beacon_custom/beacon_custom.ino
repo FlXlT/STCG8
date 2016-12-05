@@ -202,6 +202,7 @@ void loop() {
         } else {
             delay(10);
         }
+
         if (radio.ACKRequested()) {
             byte theNodeID = radio.SENDERID;
             radio.sendACK();
@@ -236,8 +237,7 @@ void loop() {
         if (diffLR1>=0) {
         	// Maps the position of diffLR1 in the range of [0.0, 0.36] to an integer from [1, 6]
             int LR1 = map(diffLR1, 0.0, 0.36, 1, 6);
-        }
-        else {
+        } else {
         	// Maps the position of diffLR1 in the range of [-0.36, 0] to an integer from [-6, -1]
             int LR1 = map(diffLR1, -0.36, 0.0, -6, -1);
         }
@@ -273,68 +273,27 @@ void loop() {
         diffUD1 = constrain(diffUD, -THRESHOLD_ROLL, THRESHOLD_ROLL);
         int UD1 = map(abs(diffUD), 0.0, 0.36, 1, 6);
         
-        if (diffUD>0) {
-            switch(UD1) {
-                case 1:
-                    brightnessU = 40.0;
-                    brightnessD = 0.0;
-                    break;
-                case 2:
-                    brightnessU = 80.0;
-                    brightnessD = 0.0;
-                    break;
-                case 3:
-                    brightnessU = 120.0;
-                    brightnessD = 0.0;
-                    break;
-                case 4:
-                    brightnessU = 160.0;
-                    brightnessD = 0.0;
-                    break;
-                case 5:
-                    brightnessU = 200.0;
-                    brightnessD = 0.0;
-                    break;
-                case 6:
-                    brightnessU = 255.0;
-                    brightnessD = 0.0;
-                    break;
-            }
-        }
-        else if (diffUD<0) {
-            switch(UD1) {
-                case 1:
-                    brightnessD = 40.0;
-                    brightnessU = 0.0;
-                    break;
-                case 2:
-                    brightnessD = 80.0;
-                    brightnessU = 0.0;
-                    break;
-                case 3:
-                    brightnessD = 120.0;
-                    brightnessU = 0.0;
-                    break;
-                case 4:
-                    brightnessD = 160.0;
-                    brightnessU = 0.0;
-                    break;
-                case 5:
-                    brightnessD = 200.0;
-                    brightnessU = 0.0;
-                case 6:
-                    brightnessD = 255.0;
-                    brightnessU = 0.0;
-                    break;
-            }
-        }
-        else if (diffUD1 == diffUD) {
-            brightnessU = 255.0;
-            brightnessD = 255.0;
+        if (diffUD1 == diffUD) {
+        	brightnessU = 255.0;
+        	brightnessD = 255.0;
+        } else {
+        	if(diffUD > 0) {
+        		if(UD1 == 6){
+        			brightnessU = 255.0;
+        		} else {
+        			brightnessU = UD1 * 40.0;
+        		}
+        		brightnessD = 0.0;
+        	} else {
+        		if(UD1 == 6) {
+        			brightnessD = 255.0;
+        		} else {
+        			brightnessD = UD1 * 40.0;
+        		}
+        		brightnessU = 0.0;
+        	}
         }
     }
-    
-}
 
 //if (echoon) Serial.println();
 //Blink(LED,3);
