@@ -19,6 +19,9 @@
 #define ENCRYPTKEY    "ae3535-practicaz" //exactly the same 16 characters/bytes on all nodes!
 #define SERIAL_BAUD   115200
 
+#define THRESHOLD_YAW 0.03
+#define THRESHOLD_ROLL 0.05
+
 #ifdef __AVR_ATmega1284P__
 #define LED           15 // Moteino MEGAs have LEDs on D15
 #define FLASH_SS      23 // and FLASH SS on D23
@@ -228,26 +231,34 @@ void loop() {
         
         //Determination of Yaw Rotation (around z-axis; a.k.a.: "left/right rotation")
         diffLR  = v1-v3;
-        diffLR1 = constrain(diffLR, -0.03, 0.03); //Constraining the value of diff LR1;
+        diffLR1 = constrain(diffLR, -THRESHOLD_YAW, THRESHOLD_YAW); //Constraining the value of diff LR1;
         
         if (diffLR1>=0) {
+        	// Maps the position of diffLR1 in the range of [0.0, 0.36] to an integer from [1, 6]
             int LR1 = map(diffLR1, 0.0, 0.36, 1, 6);
         }
         else {
+        	// Maps the position of diffLR1 in the range of [-0.36, 0] to an integer from [-6, -1]
             int LR1 = map(diffLR1, -0.36, 0.0, -6, -1);
         }
         
         if(diffLR1 != diffLR) {
             if (LR1 > 0) {
-              if (LR1 == 6) brightnessL = 255.0;
-              brightnessL = 0.0;
+              if (LR1 == 6) {
+              	brightnessL = 255.0;
+              } else {
+              	brightnessL = 0.0;
+              }
               brightnessR = LR1 * 40.0;
             } else if (LR1 < 0) {
-              if (LR1 == -6) brightnessR = 255.0;
+              if (LR1 == -6) {
+              	brightnessR = 255.0;
+              } else {
+              	brightnessR = 0.0;
+              }
               brightnessL = abs(LR1) * 40.0;
-              brightnessR = 0.0;
             } else {
-              Serial.print("Error");
+            	Serial.print("Error");
             }
         } else if (v2a>0.6 || v2b>0.6) {
         brightnessR = 255.0;
@@ -259,7 +270,7 @@ void loop() {
         
         //Determination of Roll Rotation (around x-axis --> Up/Down Motion)
         diffUD = v2b-v2a;
-        diffUD1 = constrain(diffUD, -0.05, 0.05);
+        diffUD1 = constrain(diffUD, -THRESHOLD_ROLL, THRESHOLD_ROLL);
         int UD1 = map(abs(diffUD), 0.0, 0.36, 1, 6);
         
         if (diffUD>0) {
@@ -325,22 +336,9 @@ void loop() {
     
 }
 
-
-
-
-
-
-
-
-
-
-
-
 //if (echoon) Serial.println();
 //Blink(LED,3);
-
 //}
-
 
 void Blink(byte PIN, int DELAY_MS) {
     pinMode(PIN, OUTPUT);
