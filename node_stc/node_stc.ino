@@ -35,6 +35,15 @@ typedef struct {
 } Payload;
 Payload theData;
 
+typedef struct {
+  byte brightLeft; //Brightness levels for the LEDS
+  byte brightRight;
+  byte brightUp;
+  byte brightDown;
+} Lightload;
+
+Lightload lightPackage;
+
 const int ledL = 3; // Assigning the LEDS to the digital ports connected to PWM
 const int ledR = 5;
 const int ledU = 6;
@@ -76,7 +85,8 @@ void loop() {
   float  LDR2b;
   float  LDR3;
   float  Voltage1;
-  float  Voltage2;
+  float  Voltage2a;
+  float  Voltage2b;
   float  Voltage3;
 
 
@@ -182,7 +192,8 @@ void loop() {
     if (radio.sendWithRetry(GATEWAYID, (const void*)(&theData), sizeof(theData))) {
       Serial.print(" ok!");
       Serial.print(Voltage1);
-      Serial.print(Voltage2);
+      Serial.print(Voltage2a);
+      Serial.print(Voltage2b);
       Serial.print(Voltage3);
     }
     else Serial.print(" nothing...");
@@ -194,12 +205,13 @@ void loop() {
     byte brightnessD;
 
     // check if data has been sent from the computer:
-    if (Serial.available()) {
+          // Printing payload data.
+      Lightload* light = (Lightload*)radio.DATA;
       // read the most recent byte (which will be from 0 to 255):
-      brightnessL = Serial.read();
-      brightnessR = Serial.read();
-      brightnessU = Serial.read();
-      brightnessD = Serial.read();
+      brightnessL = Serial.read(light->brightLeft);
+      brightnessR = Serial.read(light->brightRight);
+      brightnessU = Serial.read(light->brightUp);
+      brightnessD = Serial.read(light->brightDown);
       // set the brightness of the LED:
       analogWrite(ledL, brightnessL);
       analogWrite(ledR, brightnessR);
@@ -209,7 +221,7 @@ void loop() {
 
 
     lastPeriod = currPeriod;
-  }
+  
 
 }
 
