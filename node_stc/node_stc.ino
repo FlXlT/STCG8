@@ -207,11 +207,12 @@ void loop() {
     // check if data has been sent from the computer:
           // Printing payload data.
       Lightload* light = (Lightload*)radio.DATA;
+      Serial.read();
       // read the most recent byte (which will be from 0 to 255):
-      brightnessL = Serial.read(light->brightLeft);
-      brightnessR = Serial.read(light->brightRight);
-      brightnessU = Serial.read(light->brightUp);
-      brightnessD = Serial.read(light->brightDown);
+      brightnessL = light->brightLeft;
+      brightnessR = light->brightRight;
+      brightnessU = light->brightUp;
+      brightnessD = light->brightDown;
       // set the brightness of the LED:
       analogWrite(ledL, brightnessL);
       analogWrite(ledR, brightnessR);
