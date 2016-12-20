@@ -36,14 +36,18 @@ int cc = 0;
  
 typedef struct {
   int           nodeId; //store this nodeId
-  float         v1; // Voltages
-  float         v2a;
-  float         v2b;
-  float         v3;
+  int         v1; // Voltages
+  int         v1Min;
+  int         v1Max;
+  int         v2;
+  int         v2Min;
+  int         v2Max;
+  int         v3;
+  int         v3Min;
+  int         v3Max;
 } Payload;
- 
-Payload dataPackage;
- 
+Payload theData;
+
 typedef struct {
   byte brightLeft; //Brightness levels for the LEDS
   byte brightRight;
@@ -53,21 +57,6 @@ typedef struct {
  
 Lightload lightPackage;
 
-//Determination of Yaw Rotation (around z-axis; a.k.a.: "left/right rotation")
-byte brightnessL; //Brightness levels for the LEDS
-byte brightnessR;
-byte brightnessU;
-byte brightnessD;
-
-float diffLR ; //Declaring variables for voltage differences L-R and U-D
-float diffLR1;
-float diffUD;
-float diffUD1;
-int LR1;
-int UD1;
- 
- 
- 
 RFM69 radio;
 SPIFlash flash(FLASH_SS, 0xEF30); //EF30 for 4mbit  Windbond chip (W25X40CL)
 bool promiscuousMode = false; //set to 'true' to sniff all packets on the same network
@@ -124,68 +113,90 @@ void loop() {
       
       Serial.print("<NodeID "); Serial.print(pay->nodeId); Serial.print(" >\n");
       Serial.print("<Voltage 1 "); Serial.print(pay->v1); Serial.print(" >\n");
-      Serial.print("<Voltage 2 "); Serial.print(pay->v2a); Serial.print(" >\n");
-      Serial.print("<Voltage 2b "); Serial.print(pay->v2b); Serial.print(" >\n");
+      Serial.print("<Voltage 2 "); Serial.print(pay->v2); Serial.print(" >\n");
       Serial.print("<Voltage 3 "); Serial.print(pay->v3); Serial.print(" >\n");
       
-      float v1 = pay->v1;
-      float v2a = pay->v2a;
-      float v2b = pay->v2b;
-      float v3 = pay->v3;
-    
-    diffLR  = v1 - v3;
-    //diffLR1 = constrain(diffLR, -THRESHOLD_YAW, THRESHOLD_YAW); //Constraining the value of diff LR1;
+      int v1 = pay->v1;
+      int v1Min = pay->v1Min;
+      int v1Max = pay->v1Max;
+      int v2 = pay->v2;
+      int v2Min = pay->v2Min;
+      int v2Max = pay->v2Max;
+      int v3 = pay->v3;
+      int v3Min = pay->v3Min;
+      int v3Max = pay->v3Max;
 
-      // Maps the position of diffLR1 in the range of [0.0, 0.36] to an integer from [1, 6]
-     int LR1 = map(abs(diffLR), 0.03, 0.4, 1, 6);
- 
-     if (diffLR > 0) {
-        if (LR1 == 6) {
-          brightnessL = 255.0;
-          brightnessR = 0.0;
-        } else {
-          brightnessL = 0.0;
-        
-        brightnessR = LR1 * 40.0;
-        }
-      } else if (diffLR < 0) {
-        if (LR1 == -6) {
-          brightnessR = 255.0;
-        } else {
-          brightnessR = 0.0;
-        }
-        brightnessL = abs(LR1) * 40.0;
-      }
-    //Determination of Roll Rotation (around x-axis --> Up/Down Motion)
-    diffUD = v2b - v2a;
-    diffUD1 = constrain(diffUD, -THRESHOLD_ROLL, THRESHOLD_ROLL);
-   int UD1 = map(abs(diffUD), 0.0, 2.0, 1, 6);
- 
-    if (diffUD1 == diffUD) {
-      brightnessU = 255.0;
-      brightnessD = 255.0;
-    } else {
-      if (diffUD > 0) {
-        if (UD1 == 6) {
-          brightnessU = 255.0;
-        } else {
-          brightnessU = UD1 * 40.0;
-        }
-        brightnessD = 0.0;
-      } else {
-        if (UD1 == 6) {
-          brightnessD = 255.0;
-        } else {
-          brightnessD = UD1 * 40.0;
-        }
-        brightnessU = 0.0;
-      }
+  // apply the calibration to the sensor reading
+  v1 = map(v1, v1Min, v1Max, 100, 255);
+  v2 = map(v2, v2Min, v2Max, 100, 255);
+  v3 = map(v3, v3Min, v3Max, 100, 255);
+
+  // in case the sensor value is outside the range seen during calibration
+  v1 = constrain(v1, 100, 255);
+  v2 = constrain(v2, 100, 255);
+  v3 = constrain(v3, 100, 255);
+      
+    // fade the LEDs using the calibrated value:
+    if (v1 > v3 && v2 >= v1 && v2 >= v3) {
+      brightLeft = v1;
+      brightRight = 0.0;
+      brightUp = v2;
+      brightDown = 0.0;
+  }
+  
+    if (v3 > v1 && v2 > v1 && v2 >= v3) {
+      brightLeft = 0.0;
+      brightRight = v3;
+      brightUp = v2;
+      brightDown = 0.0;
     }
- 
-    lightPackage.brightLeft = brightnessL;
-    lightPackage.brightRight = brightnessR;
-    lightPackage.brightUp = brightnessU;
-    lightPackage.brightDown = brightnessD;
+
+    if (v3 > v1 && v2 > v1 && v2 < v3) {
+      brightLeft = 0.0;
+      brightRight = v3;
+      brightUp = 0.0;
+      brightDown = 0.0;
+    }
+
+    if (v3 > v1 && v2 <= v1 && v2 < v3) {
+      brightLeft = 0.0;
+      brightRight = v3;
+      brightUp = 0.0;
+      brightDown = v2;
+    }
+
+    if (v1 > v3 && v2 < v1 && v2 <= v3) {
+      brightLeft = v1;
+      brightRight = 0.0;
+      brightUp = 0.0;
+      brightDown = v2;
+  }
+
+    if (v1 > v3 && v2 < v1 && v2 > v3) {
+      brightLeft = v1;
+      brightRight = 0.0;
+      brightUp = 0.0;
+      brightDown = 0.0;
+  }
+
+    if (abs(v1-v3) <= 0.05 && v2 <= v1 && v2 <= v3) {
+      brightLeft = 0.0;
+      brightRight = 0.0;
+      brightUp = v2;
+      brightDown = 0.0;
+  }
+
+    if (abs(v1-v3) <= 0.05 && v2 >= v1 && v2 >= v3) {
+      brightLeft = 0.0;
+      brightRight = v3;
+      brightUp = 0.0;
+      brightDown = 0.0;
+  }
+
+    lightPackage.brightLeft = brightLeft;
+    lightPackage.brightRight = brightRight;
+    lightPackage.brightUp = brightUp;
+    lightPackage.brightDown = brightDown;
     
     Serial.print(v1);Serial.print("\n");
     Serial.print(v3);Serial.print("\n");
