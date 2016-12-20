@@ -64,13 +64,13 @@ int v1 = 0;         // Sensor Value
 int v1Min = 1023;   // Minimum Sensor Value
 int v1Max = 0;      // Maximum Sensor Value
 
-int v2 = 0;        
-int v2Min = 1023;   
-int v2Max = 0;           
+int v2 = 0;
+int v2Min = 1023;
+int v2Max = 0;
 
-int v3 = 0;         
-int v3Min = 1023;  
-int v3Max = 0;    
+int v3 = 0;
+int v3Min = 1023;
+int v3Max = 0;
 
 byte brightnessL;
 byte brightnessR;
@@ -98,12 +98,12 @@ void setup() {
   sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY == RF69_433MHZ ? 433 : FREQUENCY == RF69_868MHZ ? 868 : 915);
   Serial.println(buff);
 
-    if (flash.initialize())
+  if (flash.initialize())
     Serial.println("SPI Flash Init OK!");
   else
     Serial.println("SPI Flash Init FAIL! (is chip present?)");
 
-    // turn on LEDs to signal the start of the calibration period:
+  // turn on LEDs to signal the start of the calibration period:
   analogWrite(ledL, 255.0);
   analogWrite(ledR, 255.0);
   analogWrite(ledU, 255.0);
@@ -119,7 +119,7 @@ void setup() {
     if (v1 > v1Max) {
       v1Max = v1;
     }
-    
+
     if (v2 > v2Max) {
       v2Max = v2;
     }
@@ -158,9 +158,9 @@ void loop() {
   v2 = analogRead(LDR2);
   v3 = analogRead(LDR3);
 
- //-----------------------------fill in the struct with new values
+  //-----------------------------fill in the struct with new values
   theData.nodeId = NODEID;
-  theData.v1 = v1; 
+  theData.v1 = v1;
   theData.v1Min = v1Min;
   theData.v1Max = v1Max;
   theData.v2 = v2;
@@ -170,7 +170,7 @@ void loop() {
   theData.v3Min = v3Min;
   theData.v3Max = v3Max;
 
-if (Serial.available() > 0)
+  if (Serial.available() > 0)
   {
     char input = Serial.read();
     if (input >= 48 && input <= 57) //[0,9]
@@ -181,6 +181,40 @@ if (Serial.available() > 0)
       Serial.print(TRANSMITPERIOD);
       Serial.println("ms\n");
     }
+
+    if (input == 'r') //d=dump register values
+      radio.readAllRegs();
+    //if (input == 'E') //E=enable encryption
+    //  radio.encrypt(KEY);
+    //if (input == 'e') //e=disable encryption
+    //  radio.encrypt(null);
+
+    if (input == 'd') //d=dump flash area
+    {
+      Serial.println("Flash content:");
+      int counter = 0;
+
+      while (counter <= 256) {
+        Serial.print(flash.readByte(counter++), HEX);
+        Serial.print('.');
+      }
+      while (flash.busy());
+      Serial.println();
+    }
+    if (input == 'e')
+    {
+      Serial.print("Erasing Flash chip ... ");
+      flash.chipErase();
+      while (flash.busy());
+      Serial.println("DONE");
+    }
+    if (input == 'i')
+    {
+      Serial.print("DeviceID: ");
+      word jedecid = flash.readDeviceId();
+      Serial.println(jedecid, HEX);
+    }
+  }
 
 
   //check for any received packets
@@ -218,22 +252,21 @@ if (Serial.available() > 0)
     Serial.println();
 
     // check if data has been sent from the computer:
-          // Printing payload data.
-      Lightload* light = (Lightload*)radio.DATA;
-      Serial.read();
-      // read the most recent byte (which will be from 0 to 255):
-      brightnessL = light->brightLeft;
-      brightnessR = light->brightRight;
-      brightnessU = light->brightUp;
-      brightnessD = light->brightDown;
-      // set the brightness of the LED:
-      analogWrite(ledL, brightnessL);
-      analogWrite(ledR, brightnessR);
-      analogWrite(ledU, brightnessU);
-      analogWrite(ledD, brightnessD);
+    // Printing payload data.
+    Lightload* light = (Lightload*)radio.DATA;
+    Serial.read();
+    // read the most recent byte (which will be from 0 to 255):
+    brightnessL = light->brightLeft;
+    brightnessR = light->brightRight;
+    brightnessU = light->brightUp;
+    brightnessD = light->brightDown;
+    // set the brightness of the LED:
+    analogWrite(ledL, brightnessL);
+    analogWrite(ledR, brightnessR);
+    analogWrite(ledU, brightnessU);
+    analogWrite(ledD, brightnessD);
   }
 
-}
 }
 
 
