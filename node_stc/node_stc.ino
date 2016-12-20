@@ -244,9 +244,6 @@ void loop() {
     Serial.print(" bytes) ... ");
     if (radio.sendWithRetry(GATEWAYID, (const void*)(&theData), sizeof(theData))) {
       Serial.print(" ok!");
-      Serial.print(v1);
-      Serial.print(v2);
-      Serial.print(v3);
     }
     else Serial.print(" nothing...");
     Serial.println();
@@ -260,11 +257,28 @@ void loop() {
     brightnessR = light->brightRight;
     brightnessU = light->brightUp;
     brightnessD = light->brightDown;
+    
     // set the brightness of the LED:
     analogWrite(ledL, brightnessL);
     analogWrite(ledR, brightnessR);
     analogWrite(ledU, brightnessU);
     analogWrite(ledD, brightnessD);
+
+    Serial.print("Brightness Left = ");
+    Serial.print(brightnessL);
+    Serial.print('\n');
+
+    Serial.print("Brightness Right = ");
+    Serial.print(brightnessR);
+    Serial.print('\n');
+
+    Serial.print("Brightness Up = ");
+    Serial.print(brightnessU);
+    Serial.print('\n');
+
+    Serial.print("Brightness Down = ");
+    Serial.print(brightnessD);
+    Serial.print('\n');
   }
 
 }
