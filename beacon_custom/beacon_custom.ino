@@ -135,6 +135,11 @@ void loop() {
   v1 = constrain(v1, 100, 255);
   v2 = constrain(v2, 100, 255);
   v3 = constrain(v3, 100, 255);
+  
+  byte brightLeft; 
+  byte brightRight;
+  byte brightUp;
+  byte brightDown;
       
     // fade the LEDs using the calibrated value:
     if (v1 > v3 && v2 >= v1 && v2 >= v3) {
@@ -198,14 +203,6 @@ void loop() {
     lightPackage.brightUp = brightUp;
     lightPackage.brightDown = brightDown;
     
-    Serial.print(v1);Serial.print("\n");
-    Serial.print(v3);Serial.print("\n");
-    Serial.print(brightnessL);Serial.print("\n");
-    Serial.print(brightnessR);Serial.print("\n");
-    Serial.print("Constrained LR1 ");   Serial.print(diffLR1);Serial.print("\n");
-    Serial.print("diffLR v1-v3 ");Serial.print(diffLR);Serial.print("\n");
-    Serial.print("LR1 ");Serial.print(LR1);Serial.print("\n");
-    
     } else {
       delay(10);
     }
@@ -222,7 +219,11 @@ void loop() {
     } else {
       Serial.print("nothing TEST...\n");
     }
-  }
+  } 
+//  else {
+//    Serial.print("No response...");
+//    Serial.print("\n");
+//  }
 }
  
 void Blink(byte PIN, int DELAY_MS) {
