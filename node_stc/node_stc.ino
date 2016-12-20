@@ -28,9 +28,15 @@ RFM69 radio;
 
 typedef struct {
   int           nodeId; //store this nodeId
-  float         v1; // Voltages
-  float         v2;
-  float         v3;
+  int         v1; // Voltages
+  int         v1Min;
+  int         v1Max;
+  int         v2;
+  int         v2Min;
+  int         v2Max;
+  int         v3;
+  int         v3Min;
+  int         v3Max;
 } Payload;
 Payload theData;
 
@@ -66,6 +72,10 @@ int v3 = 0;
 int v3Min = 1023;  
 int v3Max = 0;    
 
+byte brightnessL;
+byte brightnessR;
+byte brightnessU;
+byte brightnessD;
 
 void setup() {
   // Setting the pins in the correct mode
@@ -87,6 +97,11 @@ void setup() {
   char buff[50];
   sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY == RF69_433MHZ ? 433 : FREQUENCY == RF69_868MHZ ? 868 : 915);
   Serial.println(buff);
+
+    if (flash.initialize())
+    Serial.println("SPI Flash Init OK!");
+  else
+    Serial.println("SPI Flash Init FAIL! (is chip present?)");
 
     // turn on LEDs to signal the start of the calibration period:
   analogWrite(ledL, 255.0);
@@ -143,78 +158,82 @@ void loop() {
   v2 = analogRead(LDR2);
   v3 = analogRead(LDR3);
 
-  // apply the calibration to the sensor reading
+ //-----------------------------fill in the struct with new values
+  theData.nodeId = NODEID;
+  theData.v1 = v1; 
+  theData.v1Min = v1Min;
+  theData.v1Max = v1Max;
+  theData.v2 = v2;
+  theData.v2Min = v2Min;
+  theData.v2Max = v2Max;
+  theData.v3 = v3;
+  theData.v3Min = v3Min;
+  theData.v3Max = v3Max;
 
-  v1 = map(v1, v1Min, v1Max, 100, 255);
-  v2 = map(v2, v2Min, v2Max, 100, 255);
-  v3 = map(v3, v3Min, v3Max, 100, 255);
-
-  // in case the sensor value is outside the range seen during calibration
-  v1 = constrain(v1, 100, 255);
-  v2 = constrain(v2, 100, 255);
-  v3 = constrain(v3, 100, 255);
-  
-  // fade the LEDs using the calibrated value:
-    if (v1 > v3 && v2 >= v1 && v2 >= v3) {
-      analogWrite(ledL, v1);
-      analogWrite(ledR, 0.0);
-      analogWrite(ledU, v2);
-      analogWrite(ledD, 0.0);
-  }
-  
-    if (v3 > v1 && v2 > v1 && v2 >= v3) {
-      analogWrite(ledL, 0.0);
-      analogWrite(ledR, v3);
-      analogWrite(ledU, v2);
-      analogWrite(ledD, 0.0);
+if (Serial.available() > 0)
+  {
+    char input = Serial.read();
+    if (input >= 48 && input <= 57) //[0,9]
+    {
+      TRANSMITPERIOD = 100 * (input - 48);
+      if (TRANSMITPERIOD == 0) TRANSMITPERIOD = 1000;
+      Serial.print("\nChanging delay to ");
+      Serial.print(TRANSMITPERIOD);
+      Serial.println("ms\n");
     }
 
-    if (v3 > v1 && v2 > v1 && v2 < v3) {
-      analogWrite(ledL, 0.0);
-      analogWrite(ledR, v3);
-      analogWrite(ledU, 0.0);
-      analogWrite(ledD, 0.0);
+
+  //check for any received packets
+  if (radio.receiveDone())
+  {
+    Serial.print('['); Serial.print(radio.SENDERID, DEC); Serial.print("] ");
+    for (byte i = 0; i < radio.DATALEN; i++)
+      Serial.print((char)radio.DATA[i]);
+    Serial.print("   [RX_RSSI:"); Serial.print(radio.readRSSI()); Serial.print("]");
+
+    if (radio.ACKRequested())
+    {
+      radio.sendACK();
+      Serial.print(" - ACK sent");
+      delay(10);
     }
 
-    if (v3 > v1 && v2 <= v1 && v2 < v3) {
-      analogWrite(ledL, 0.0);
-      analogWrite(ledR, v3);
-      analogWrite(ledU, 0.0);
-      analogWrite(ledD, v2);
+    Serial.println();
+  }
+
+  int currPeriod = millis() / TRANSMITPERIOD;
+  if (currPeriod != lastPeriod)
+  {
+
+    Serial.print("Sending struct (");
+    Serial.print(sizeof(theData));
+    Serial.print(" bytes) ... ");
+    if (radio.sendWithRetry(GATEWAYID, (const void*)(&theData), sizeof(theData))) {
+      Serial.print(" ok!");
+      Serial.print(v1);
+      Serial.print(v2);
+      Serial.print(v3);
     }
+    else Serial.print(" nothing...");
+    Serial.println();
 
-    if (v1 > v3 && v2 < v1 && v2 <= v3) {
-      analogWrite(ledL, v1);
-      analogWrite(ledR, 0.0);
-      analogWrite(ledU, 0.0);
-      analogWrite(ledD, v2);
+    // check if data has been sent from the computer:
+          // Printing payload data.
+      Lightload* light = (Lightload*)radio.DATA;
+      Serial.read();
+      // read the most recent byte (which will be from 0 to 255):
+      brightnessL = light->brightLeft;
+      brightnessR = light->brightRight;
+      brightnessU = light->brightUp;
+      brightnessD = light->brightDown;
+      // set the brightness of the LED:
+      analogWrite(ledL, brightnessL);
+      analogWrite(ledR, brightnessR);
+      analogWrite(ledU, brightnessU);
+      analogWrite(ledD, brightnessD);
   }
 
-    if (v1 > v3 && v2 < v1 && v2 > v3) {
-      analogWrite(ledL, v1);
-      analogWrite(ledR, 0.0);
-      analogWrite(ledU, 0.0);
-      analogWrite(ledD, 0.0);
-  }
-
-    if (abs(v1-v3) <= 0.05 && v2 <= v1 && v2 <= v3) {
-      analogWrite(ledL, 0.0);
-      analogWrite(ledR, 0.0);
-      analogWrite(ledU, v2);
-      analogWrite(ledD, 0.0);
-  }
-
-  
-    if (abs(v1-v3) <= 0.05 && v2 >= v1 && v2 >= v3) {
-      analogWrite(ledL, 0.0);
-      analogWrite(ledR, v3);
-      analogWrite(ledU, 0.0);
-      analogWrite(ledD, 0.0);
-  }
-  Serial.print("Brightv1 = "); Serial.print(v1); Serial.print("\n");
-  Serial.print("Brightv2 = "); Serial.print(v2); Serial.print("\n");
-  Serial.print("Brightv3 = "); Serial.print(v3); Serial.print("\n");
-
+}
 }
 
 
