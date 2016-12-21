@@ -25,6 +25,7 @@ byte sendSize = 0;
 boolean requestACK = false;
 SPIFlash flash(FLASH_SS, 0xEF30); //EF30 for 4mbit  Windbond chip (W25X40CL)
 RFM69 radio;
+boolean paused = false;
 
 typedef struct {
   int           nodeId; //store this nodeId
@@ -214,16 +215,27 @@ void loop() {
       word jedecid = flash.readDeviceId();
       Serial.println(jedecid, HEX);
     }
+    if (input == 'p')
+    {
+      paused = !paused;
+      if (paused) {
+        Serial.print("Sending PAUSED");
+      } else {
+        Serial.print("Sending CONTINUED");
+      }
+    }
   }
 
 
   //check for any received packets
   if (radio.receiveDone())
   {
-    Serial.print('['); Serial.print(radio.SENDERID, DEC); Serial.print("] ");
-    for (byte i = 0; i < radio.DATALEN; i++)
-      Serial.print((char)radio.DATA[i]);
-    Serial.print("   [RX_RSSI:"); Serial.print(radio.readRSSI()); Serial.print("]");
+    if (!paused) {
+      Serial.print('['); Serial.print(radio.SENDERID, DEC); Serial.print("] ");
+      for (byte i = 0; i < radio.DATALEN; i++)
+        Serial.print((char)radio.DATA[i]);
+      Serial.print("   [RX_RSSI:"); Serial.print(radio.readRSSI()); Serial.print("]");
+    }
 
     if (radio.ACKRequested())
     {
@@ -235,50 +247,52 @@ void loop() {
     Serial.println();
   }
 
-  int currPeriod = millis() / TRANSMITPERIOD;
-  if (currPeriod != lastPeriod)
-  {
+  if (!paused) {
+    int currPeriod = millis() / TRANSMITPERIOD;
+    if (currPeriod != lastPeriod)
+    {
 
-    Serial.print("Sending struct (");
-    Serial.print(sizeof(theData));
-    Serial.print(" bytes) ... ");
-    if (radio.sendWithRetry(GATEWAYID, (const void*)(&theData), sizeof(theData))) {
-      Serial.print(" ok!");
+      Serial.print("Sending struct (");
+      Serial.print(sizeof(theData));
+      Serial.print(" bytes) ... ");
+      if (radio.sendWithRetry(GATEWAYID, (const void*)(&theData), sizeof(theData))) {
+        Serial.print(" ok!");
+      }
+      else Serial.print(" nothing...");
+      Serial.println();
+
+      // check if data has been sent from the computer:
+      // Printing payload data.
+      Lightload* light = (Lightload*)radio.DATA;
+      Serial.read();
+      // read the most recent byte (which will be from 0 to 255):
+      brightnessL = light->brightLeft;
+      brightnessR = light->brightRight;
+      brightnessU = light->brightUp;
+      brightnessD = light->brightDown;
+
+      // set the brightness of the LED:
+      analogWrite(ledL, brightnessL);
+      analogWrite(ledR, brightnessR);
+      analogWrite(ledU, brightnessU);
+      analogWrite(ledD, brightnessD);
+
+      Serial.print("Brightness Left = ");
+      Serial.print(brightnessL);
+      Serial.print('\n');
+
+      Serial.print("Brightness Right = ");
+      Serial.print(brightnessR);
+      Serial.print('\n');
+
+      Serial.print("Brightness Up = ");
+      Serial.print(brightnessU);
+      Serial.print('\n');
+
+      Serial.print("Brightness Down = ");
+      Serial.print(brightnessD);
+      Serial.print('\n');
     }
-    else Serial.print(" nothing...");
-    Serial.println();
-
-    // check if data has been sent from the computer:
-    // Printing payload data.
-    Lightload* light = (Lightload*)radio.DATA;
-    Serial.read();
-    // read the most recent byte (which will be from 0 to 255):
-    brightnessL = light->brightLeft;
-    brightnessR = light->brightRight;
-    brightnessU = light->brightUp;
-    brightnessD = light->brightDown;
-    
-    // set the brightness of the LED:
-    analogWrite(ledL, brightnessL);
-    analogWrite(ledR, brightnessR);
-    analogWrite(ledU, brightnessU);
-    analogWrite(ledD, brightnessD);
-
-    Serial.print("Brightness Left = ");
-    Serial.print(brightnessL);
-    Serial.print('\n');
-
-    Serial.print("Brightness Right = ");
-    Serial.print(brightnessR);
-    Serial.print('\n');
-
-    Serial.print("Brightness Up = ");
-    Serial.print(brightnessU);
-    Serial.print('\n');
-
-    Serial.print("Brightness Down = ");
-    Serial.print(brightnessD);
-    Serial.print('\n');
   }
 
 }
