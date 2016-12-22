@@ -25,7 +25,10 @@ byte sendSize = 0;
 boolean requestACK = false;
 SPIFlash flash(FLASH_SS, 0xEF30); //EF30 for 4mbit  Windbond chip (W25X40CL)
 RFM69 radio;
+
+// States
 boolean paused = false;
+boolean on = true;
 
 typedef struct {
   int           nodeId; //store this nodeId
@@ -78,37 +81,14 @@ byte brightnessR;
 byte brightnessU;
 byte brightnessD;
 
-void setup() {
-  // Setting the pins in the correct mode
-  analogReference(DEFAULT); // Using reference voltage of 3.3V
-
-  pinMode(A0, INPUT); //Putting the Analog inputs to the correct mode
-  pinMode(A1, INPUT);
-  pinMode(A2, INPUT);
-
-  pinMode(ledL, OUTPUT); //Putting the digital inputs to the correct mode
-  pinMode(ledR, OUTPUT);
-  pinMode(ledU, OUTPUT);
-  pinMode(ledD, OUTPUT);
-
-  Serial.begin(SERIAL_BAUD);
-  radio.initialize(FREQUENCY, NODEID, NETWORKID);
-  //radio.setHighPower(); //uncomment only for RFM69HW!
-  radio.encrypt(KEY);
-  char buff[50];
-  sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY == RF69_433MHZ ? 433 : FREQUENCY == RF69_868MHZ ? 868 : 915);
-  Serial.println(buff);
-
-  if (flash.initialize())
-    Serial.println("SPI Flash Init OK!");
-  else
-    Serial.println("SPI Flash Init FAIL! (is chip present?)");
-
+void calibrate() {
   // turn on LEDs to signal the start of the calibration period:
   analogWrite(ledL, 255.0);
   analogWrite(ledR, 255.0);
   analogWrite(ledU, 255.0);
   analogWrite(ledD, 255.0);
+
+
 
   // calibrate during the first 10 seconds
   while (millis() < 10000) {
@@ -148,7 +128,40 @@ void setup() {
   analogWrite(ledR, 0.0);
   analogWrite(ledU, 0.0);
   analogWrite(ledD, 0.0);
+
+
 }
+
+void setup() {
+  // Setting the pins in the correct mode
+  analogReference(DEFAULT); // Using reference voltage of 3.3V
+
+  pinMode(A0, INPUT); //Putting the Analog inputs to the correct mode
+  pinMode(A1, INPUT);
+  pinMode(A2, INPUT);
+
+  pinMode(ledL, OUTPUT); //Putting the digital inputs to the correct mode
+  pinMode(ledR, OUTPUT);
+  pinMode(ledU, OUTPUT);
+  pinMode(ledD, OUTPUT);
+
+  Serial.begin(SERIAL_BAUD);
+  radio.initialize(FREQUENCY, NODEID, NETWORKID);
+  //radio.setHighPower(); //uncomment only for RFM69HW!
+  radio.encrypt(KEY);
+  char buff[50];
+  sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY == RF69_433MHZ ? 433 : FREQUENCY == RF69_868MHZ ? 868 : 915);
+  Serial.println(buff);
+
+  if (flash.initialize())
+    Serial.println("SPI Flash Init OK!");
+  else
+    Serial.println("SPI Flash Init FAIL! (is chip present?)");
+
+  calibrate();
+
+}
+
 
 void loop() {
   long lastPeriod = -1;
@@ -224,13 +237,27 @@ void loop() {
         Serial.print("Sending CONTINUED");
       }
     }
+    if (input == 'x') {
+      on = !on;
+      if (on) {
+        Serial.print("Sending ON");
+        calibrate();
+      } else {
+        Serial.print("Sending OFF");
+        analogWrite(ledL, 0.0);
+        analogWrite(ledR, 0.0);
+        analogWrite(ledU, 0.0);
+        analogWrite(ledD, 0.0);
+      }
+    }
+
   }
 
 
   //check for any received packets
   if (radio.receiveDone())
   {
-    if (!paused) {
+    if (!paused && on) {
       Serial.print('['); Serial.print(radio.SENDERID, DEC); Serial.print("] ");
       for (byte i = 0; i < radio.DATALEN; i++)
         Serial.print((char)radio.DATA[i]);
@@ -247,7 +274,8 @@ void loop() {
     Serial.println();
   }
 
-  if (!paused) {
+  if (!paused && on) {
+
     int currPeriod = millis() / TRANSMITPERIOD;
     if (currPeriod != lastPeriod)
     {
