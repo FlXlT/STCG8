@@ -82,7 +82,9 @@ byte brightnessU;
 byte brightnessD;
 
 void calibrate() {
+  Serial.print("\n");
   Serial.print("CALIBRATING");
+  Serial.print("\n");
   
   // turn on LEDs to signal the start of the calibration period:
   analogWrite(ledL, 255.0);
