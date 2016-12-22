@@ -89,9 +89,10 @@ void calibrate() {
   analogWrite(ledR, 255.0);
   analogWrite(ledU, 255.0);
   analogWrite(ledD, 255.0);
-
+  
+  float startTime = millis();
   // calibrate during the first 10 seconds
-  while (millis() < 10000) {
+  while (millis() < startTime + 10000) {
     v1 = analogRead(LDR1);
     v2 = analogRead(LDR2);
     v3 = analogRead(LDR3);
